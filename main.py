@@ -4,6 +4,7 @@ import json
 import sys
 import requests
 import csv    
+import os
 
 
 
@@ -70,14 +71,17 @@ headers["X-auth-access-token"] = auth_token
 print("\n\nConnected, your authentication token is:\t\t" + auth_token)
 
 #Get Network Addresses
-net_url = fmc_url+"/api/fmc_config/v1/domain/e276abec-e0f2-11e3-8169-6d9ed49b625f/object/networkaddresses?offset=0&limit=10000"
-#Get Host Addresses
-host_url = fmc_url+"/api/fmc_config/v1/domain/e276abec-e0f2-11e3-8169-6d9ed49b625f/object/hosts?offset=0&limit=10000"
+net_url = fmc_url+"/api/fmc_config/v1/domain/e276abec-e0f2-11e3-8169-6d9ed49b625f/object/networkaddresses?offset=0&limit=100000"
+
 #Post Network Group
 group_url =fmc_url+"/api/fmc_config/v1/domain/e276abec-e0f2-11e3-8169-6d9ed49b625f/object/networkgroups"
 
-#Read the file  that contains the objects that are part of the network group, this shoud be a .csv file and it should have the coulums name and type, as in the example
-open_csv=input('\n\nPlease enter the file path, file name and file extension for the file storing the Network Group Elements:\t\t')
+#Read the file  that contains the objects that are part of the network group, this shoud be a .csv file
+#The file should be on the same directory as this script
+#The file should contain a colum named name
+
+fName_request = input('\n\nPlease enter the file name for the file storing the Network Group Elements:\t\t')
+open_csv = os.path.join(os.path.dirname(__file__))+"\\"+fName_request
 
 csvfile = open(open_csv,mode='r')
 objects = csv.DictReader(csvfile)
@@ -90,26 +94,13 @@ try:
     net_list = get_net.text
     net_json = json.loads(net_list)
 
-    #This is for Host Address Objects
-    get_host =  requests.get(host_url,headers=headers,verify=False)
-    host_list = get_host.text
-    host_json = json.loads(host_list)
-
     group_objects = []
 
     for objects in objects:
-        #This if is for Network Address Type Objects
-        if objects["type"] == "network":
-            for net_names in net_json["items"]:
-                if objects["name"] == net_names ["name"]:
-                    #Here you obtain the name of the object, the type, and the id of the object, then it's stored inside the group objects variable
-                    group_objects.append({"type" : net_names["type"] , "name" : net_names["name"] , "id" : net_names["id"]})
-        #This elif is for Host Address Type Objects
-        elif objects["type"] == "host":
-            for host_names in host_json["items"]:
-                if objects["name"] == host_names ["name"]:
-                    #Here you obtain the name of the object, the type, and the id of the object, then it's stored inside the group objects variable
-                    group_objects.append({"type" : host_names["type"] , "name" : host_names["name"] , "id" : host_names["id"]})
+        for net_names in net_json["items"]:
+            if objects["name"] == net_names ["name"]:
+                #Here you obtain the name of the object, the type, and the id of the object, then it's stored inside the group objects variable
+                group_objects.append({"type" : net_names["type"] , "name" : net_names["name"] , "id" : net_names["id"]})
     
     while not group_name:
         group_name = input("\nPlease enter the group name: ")
